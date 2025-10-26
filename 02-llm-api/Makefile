@@ -22,7 +22,8 @@ run:
 		echo "  cp .env.example .env"; \
 		exit 1; \
 	fi
-	uv run python src/bot.py
+	uv run python -X utf8 src/bot.py
+
 
 clean:
 	@echo "Очистка временных файлов..."
