@@ -7,10 +7,21 @@
 <img width="700" height="500" alt="image" src="https://github.com/user-attachments/assets/9926fc0a-b337-461c-8425-e2722f9dbf6c" />
 
 3.  Примеры работы с разными моделями
-### DeepSeek
+#### DeepSeek
+<img width="700" height="500" alt="image" src="https://github.com/user-attachments/assets/da993539-70d9-4a20-878d-462ab7a5182c" />
 
-### Gemini
+Меньше всего токенов, при этом отработка запроса максимально быстрая
 
-### IBM
+#### Gemini
+<img width="1860" height="1524" alt="image" src="https://github.com/user-attachments/assets/e79ceade-856c-4347-81df-e796abfe8806" />
+
+Запрос отработал также быстро
+
+#### IBM
+<img width="700" height="500" alt="image" src="https://github.com/user-attachments/assets/86f031a4-3ad2-42a5-8524-53b00d419fb4" />
+
+Запрос отрабатывался очень медленно, токенов больше всего
 
 4.  Демонстрация работы управления историей диалога
+
+
