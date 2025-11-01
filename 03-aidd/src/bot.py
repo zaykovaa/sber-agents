@@ -13,6 +13,12 @@ import asyncio
 from openai import AsyncOpenAI
 from typing import Dict, List
 
+SYSTEM_PROMPT = (
+    "Ты — профессиональный эксперт в области кино и сериалов, опытный советчик по фильмам. "
+    "Твоя задача — помогать пользователям находить идеальный контент, знаешь тренды, жанры, без спойлеров. "
+    "Общайся кратко, дружелюбно, профессионально."
+)
+
 class FilmExpertBot:
     def __init__(self):
         load_dotenv()
@@ -33,20 +39,26 @@ class FilmExpertBot:
         self.max_history = int(os.getenv("MAX_HISTORY_MESSAGES", "10"))
 
     def get_conversation_history(self, user_id: int) -> List[Dict[str, str]]:
-        if user_id not in self.conversations:
-            self.conversations[user_id] = []
+        if user_id not in self.conversations or not self.conversations[user_id]:
+            self.conversations[user_id] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        elif self.conversations[user_id][0].get("role") != "system":
+            self.conversations[user_id].insert(0, {"role": "system", "content": SYSTEM_PROMPT})
         return self.conversations[user_id]
 
     def add_message(self, user_id: int, role: str, content: str):
         history = self.get_conversation_history(user_id)
         history.append({"role": role, "content": content})
+        # системный промпт сохраняем всегда первым
         if len(history) > self.max_history:
-            self.conversations[user_id] = history[-self.max_history:]
+            system_prompt = history[0]
+            rest = history[-(self.max_history - 1):]
+            self.conversations[user_id] = [system_prompt] + [m for m in rest if m.get("role") != "system"]
 
     def clear_conversation(self, user_id: int):
-        self.conversations[user_id] = []
+        self.conversations[user_id] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     async def start_handler(self, message: types.Message):
+        self.clear_conversation(message.from_user.id)
         await message.answer("👋 Привет! Я Эксперт по кино. Используйте /help для справки.")
         self.logger.info(f"/start от {message.from_user.id}")
 
@@ -64,7 +76,7 @@ class FilmExpertBot:
         try:
             response = await self.llm.chat.completions.create(
                 model=self.model_name,
-                messages=history if history else [{"role": "user", "content": ""}],
+                messages=history,
             )
             result = response.choices[0].message.content.strip()
             return result
