@@ -28,19 +28,28 @@ class FilmExpertBot:
         )
         self.logger = logging.getLogger(__name__)
         self.token = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not self.token:
+            self.logger.error("TELEGRAM_BOT_TOKEN не найден в .env, бот завершает работу.")
+            exit(1)
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            self.logger.error("OPENROUTER_API_KEY не найден в .env, бот завершает работу.")
+            exit(1)
         self.bot = Bot(token=self.token)
         self.dp = Dispatcher()
         self.model_name = os.getenv("MODEL_NAME", "openai/gpt-3.5-turbo")
         self.llm = AsyncOpenAI(
-            api_key=os.getenv("OPENROUTER_API_KEY"),
+            api_key=api_key,
             base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
         )
         self.conversations: Dict[int, List[Dict[str, str]]] = {}
         self.max_history = int(os.getenv("MAX_HISTORY_MESSAGES", "10"))
+        self.stats = {"total_users": 0, "total_messages": 0}
 
     def get_conversation_history(self, user_id: int) -> List[Dict[str, str]]:
         if user_id not in self.conversations or not self.conversations[user_id]:
             self.conversations[user_id] = [{"role": "system", "content": SYSTEM_PROMPT}]
+            self.stats["total_users"] += 1
         elif self.conversations[user_id][0].get("role") != "system":
             self.conversations[user_id].insert(0, {"role": "system", "content": SYSTEM_PROMPT})
         return self.conversations[user_id]
@@ -48,7 +57,6 @@ class FilmExpertBot:
     def add_message(self, user_id: int, role: str, content: str):
         history = self.get_conversation_history(user_id)
         history.append({"role": role, "content": content})
-        # системный промпт сохраняем всегда первым
         if len(history) > self.max_history:
             system_prompt = history[0]
             rest = history[-(self.max_history - 1):]
@@ -79,6 +87,7 @@ class FilmExpertBot:
                 messages=history,
             )
             result = response.choices[0].message.content.strip()
+            self.logger.info(f"Ответ сгенерирован для {user_id}")
             return result
         except Exception as e:
             self.logger.error(f"LLM error: {e}")
@@ -90,6 +99,7 @@ class FilmExpertBot:
         response = await self.generate_response(uid)
         self.add_message(uid, "assistant", response)
         await message.answer(response)
+        self.stats["total_messages"] += 1
         self.logger.info(f"Ответ отправлен пользователю {uid}")
 
     def register_handlers(self):
