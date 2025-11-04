@@ -108,8 +108,16 @@ class FilmExpertBot:
         self.dp.message(Command("clear"))(self.clear_handler)
         self.dp.message()(self.text_handler)
 
-    def run(self):
+    async def run(self):
         self.register_handlers()
         self.logger.info("Бот запускается...")
-        asyncio.run(self.dp.start_polling(self.bot))
+        await self.dp.start_polling(self.bot)
 
+
+async def main():
+    bot = FilmExpertBot()
+    await bot.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
