@@ -59,8 +59,9 @@ class FilmExpertBot:
         history.append({"role": role, "content": content})
         if len(history) > self.max_history:
             system_prompt = history[0]
-            rest = history[-(self.max_history - 1):]
-            self.conversations[user_id] = [system_prompt] + [m for m in rest if m.get("role") != "system"]
+            # Берем последние (max_history - 1) сообщений, исключая системное
+            rest = [m for m in history[1:] if m.get("role") != "system"][-(self.max_history - 1):]
+            self.conversations[user_id] = [system_prompt] + rest
 
     def clear_conversation(self, user_id: int):
         self.conversations[user_id] = [{"role": "system", "content": SYSTEM_PROMPT}]
