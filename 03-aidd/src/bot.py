@@ -91,7 +91,17 @@ class FilmExpertBot:
             self.logger.info(f"Ответ сгенерирован для {user_id}")
             return result
         except Exception as e:
+            error_str = str(e)
             self.logger.error(f"LLM error: {e}")
+            
+            # Проверяем на географические ограничения
+            if "403" in error_str or "unsupported_country" in error_str.lower() or "forbidden" in error_str.lower():
+                return (
+                    "⚠️ К сожалению, выбранная модель недоступна в вашем регионе. "
+                    "Пожалуйста, попробуйте позже или используйте другую модель. "
+                    "Для настройки модели измените MODEL_NAME в файле .env"
+                )
+            
             return "Ошибка генерации ответа, попробуйте еще раз."
 
     async def text_handler(self, message: types.Message):
@@ -117,7 +127,12 @@ class FilmExpertBot:
 
 async def main():
     bot = FilmExpertBot()
-    await bot.run()
+    try:
+        await bot.run()
+    except KeyboardInterrupt:
+        bot.logger.info("Бот останавливается...")
+    finally:
+        await bot.bot.session.close()
 
 
 if __name__ == "__main__":
